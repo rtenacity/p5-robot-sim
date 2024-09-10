@@ -2,7 +2,8 @@ const SCREEN_WIDTH = window.innerWidth;
 const SCREEN_HEIGHT = window.innerHeight - 100;
 
 let force_x = 0;
-let force_y = 980; // Gravity (increased for more visible effect)
+let force_y = 500; // Gravity (increased for more visible effect)
+let damp_constant = 0.5;
 
 function distance(p0, p1) {
   let dx = p1.x - p0.x;
@@ -23,8 +24,8 @@ class Point {
 
   update(dt) {
     if (!this.pinned) {
-      let vel_x = (this.x - this.old_x) * 0.99; // Add some damping
-      let vel_y = (this.y - this.old_y) * 0.99;
+      let vel_x = (this.x - this.old_x)
+      let vel_y = (this.y - this.old_y)
 
       this.old_x = this.x;
       this.old_y = this.y;
@@ -42,17 +43,17 @@ class Point {
     let vel_y = (this.y - this.old_y);
     if (this.x < 0) {
       this.x = 0;
-      this.old_x = this.x + vel_x * 0.9; // Add bounce effect
+      this.old_x = this.x + vel_x * damp_constant;
     } else if (this.x > SCREEN_WIDTH) {
       this.x = SCREEN_WIDTH;
-      this.old_x = this.x + vel_x * 0.9;
+      this.old_x = this.x + vel_x * damp_constant;
     }
     if (this.y < 0) {
       this.y = 0;
-      this.old_y = this.y + vel_y * 0.9;
+      this.old_y = this.y + vel_y * damp_constant;
     } else if (this.y > SCREEN_HEIGHT) {
       this.y = SCREEN_HEIGHT;
-      this.old_y = this.y + vel_y * 0.9;
+      this.old_y = this.y + vel_y * damp_constant;
     }
   }
 
