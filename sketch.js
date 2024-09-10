@@ -69,18 +69,29 @@ class Point {
 }
 
 class Stick {
-  constructor(p0, p1, restLength, diagonal = false) {
+  constructor(p0, p1, restLength, harmonic, diagonal) {
     this.p0 = p0;
     this.p1 = p1;
     this.restLength = restLength;
+    this.frameCount = 0;
+    this.harmonic = harmonic;
     this.diagonal = diagonal;
+
+    console.log(this.harmonic);
   }
 
   update(dt) {
+
+    let length = this.restLength;
+
+    if (this.harmonic) {
+      length = this.restLength + Math.sin(this.frameCount / 200) * 50;
+    }
+
     let dx = this.p1.x - this.p0.x;
     let dy = this.p1.y - this.p0.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
-    let diff = this.restLength - dist;
+    let diff = length - dist;
     let percent = (diff / dist) / 2;
     
     let offset_x = dx * percent;
@@ -95,6 +106,7 @@ class Stick {
       this.p1.x += offset_x;
       this.p1.y += offset_y;
     }
+    this.frameCount++;
   }
 
   render() {
@@ -103,178 +115,126 @@ class Stick {
   }
 }
 
+
 class Box {
-  constructor(centerX, centerY, width, height) {
-    this.centerX = centerX;
-    this.centerY = centerY;
-    this.width = width;
-    this.height = height;
-    this.points = this.createPoints();
-    this.sticks = this.createSticks();
-    this.draggingPoint = null;
-    this.initialMouseX = 0;
-  }
-
-  createPoints() {
-    return [
-      new Point(this.centerX - this.width/2, this.centerY - this.height/2, 1.0, false),  // A
-      new Point(this.centerX + this.width/2, this.centerY - this.height/2, 1.0, false),  // B
-      new Point(this.centerX + this.width/2, this.centerY + this.height/2, 1.0, false),  // C
-      new Point(this.centerX - this.width/2, this.centerY + this.height/2, 1.0, false),  // D
+  constructor(p1, p2, p3, p4, oscillating) {
+    this.ptArray = [p1, p2, p3, p4];
+    this.stickArray = [
+      new Stick(p1, p2, distance(p1, p2), false),
+      new Stick(p2, p3, distance(p2, p3), false),
+      new Stick(p3, p4, distance(p3, p4), false),
+      new Stick(p4, p1, distance(p4, p1), false),
+      new Stick(p1, p3, distance(p1, p3), false, true),
     ];
-  }
 
-  createSticks() {
-    return [
-      new Stick(this.points[0], this.points[1], distance(this.points[0], this.points[1])),  //  A-----B
-      new Stick(this.points[1], this.points[2], distance(this.points[1], this.points[2])),  //  | \   |
-      new Stick(this.points[2], this.points[3], distance(this.points[2], this.points[3])),  //  |  \  |
-      new Stick(this.points[3], this.points[0], distance(this.points[3], this.points[0])),  //  |   \ |
-      new Stick(this.points[0], this.points[2], distance(this.points[0], this.points[2]), true),  //  D-----C
-    ];
+    this.oscillating = oscillating;
+    this.initialWidth = distance(p1, p2);
+    this.initialHeight = distance(p2, p3);
+    this.initialDiagonal = distance(p1, p3);
   }
 
   update(dt) {
-    for (let point of this.points) {
-      point.update(dt);
+    if (this.oscillating) {
+      // Oscillate width
+      let widthChange = Math.sin(this.stickArray[0].frameCount / 10) * 20;
+      this.stickArray[0].restLength = this.initialWidth + widthChange;
+      this.stickArray[2].restLength = this.initialWidth + widthChange;
+
+      let heightChange = 0
+      this.stickArray[1].restLength = this.initialHeight + heightChange;
+      this.stickArray[3].restLength = this.initialHeight + heightChange;
+
+      let newWidth = this.initialWidth + widthChange;
+      let newHeight = this.initialHeight + heightChange;
+      let newDiagonal = Math.sqrt(newWidth * newWidth + newHeight * newHeight);
+      this.stickArray[4].restLength = newDiagonal;
     }
 
-    for (let i = 0; i < 10; i++) {
-      for (let stick of this.sticks) {
-        stick.update(dt);
-      }
-      this.maintainRightAngles();
+    for (let stick of this.stickArray) {
+      stick.update(dt);
     }
-    
-    for (let point of this.points) {
+
+    for (let point of this.ptArray) {
+      point.update(dt);
       point.constrain();
     }
+
+    this.render();
   }
 
   render() {
-    for (let stick of this.sticks) {
+    for (let stick of this.stickArray) {
       stick.render();
     }
-    for (let point of this.points) {
+
+    for (let point of this.ptArray) {
       point.render();
     }
   }
-
-  maintainRightAngles() {
-    let avgWidth = (this.sticks[0].restLength + this.sticks[2].restLength) / 2;
-    let avgHeight = (this.sticks[1].restLength + this.sticks[3].restLength) / 2;
-
-    let centerX = (this.points[0].x + this.points[1].x + this.points[2].x + this.points[3].x) / 4;
-    let centerY = (this.points[0].y + this.points[1].y + this.points[2].y + this.points[3].y) / 4;
-
-    this.points[0].x = centerX - avgWidth / 2;
-    this.points[0].y = centerY - avgHeight / 2;
-
-    this.points[1].x = centerX + avgWidth / 2;
-    this.points[1].y = centerY - avgHeight / 2;
-
-    this.points[2].x = centerX + avgWidth / 2;
-    this.points[2].y = centerY + avgHeight / 2;
-
-    this.points[3].x = centerX - avgWidth / 2;
-    this.points[3].y = centerY + avgHeight / 2;
-
-    this.sticks[4].restLength = distance(this.points[0], this.points[2]);
-  }
-
-  handleMousePressed(mouseX, mouseY) {
-    for (let point of this.points) {
-      if (point.isMouseOver()) {
-        this.draggingPoint = point;
-        this.initialMouseX = mouseX;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  handleMouseDragged(mouseX) {
-    if (this.draggingPoint) {
-      let dx = mouseX - this.initialMouseX;
-      
-      // Determine which side the dragging point is on
-      let isLeftSide = (this.draggingPoint === this.points[0] || this.draggingPoint === this.points[3]);
-      
-      // Move the points on the same side
-      if (isLeftSide) {
-        this.points[0].x += dx;
-        this.points[3].x += dx;
-      } else {
-        this.points[1].x += dx;
-        this.points[2].x += dx;
-      }
-      
-      // Update old positions to prevent sudden velocity changes
-      for (let point of this.points) {
-        point.old_x = point.x;
-      }
-
-      // Update stick rest lengths for horizontal sticks only
-      this.sticks[0].restLength = distance(this.points[0], this.points[1]);
-      this.sticks[2].restLength = distance(this.points[2], this.points[3]);
-      
-      this.initialMouseX = mouseX;
-      return true;
-    }
-    return false;
-  }
-
-  handleMouseReleased() {
-    if (this.draggingPoint) {
-      this.draggingPoint = null;
-      return true;
-    }
-    return false;
-  }
 }
 
-let boxes = [];
+
+
+
+let points = [
+  new Point(200, 200, 1.0, false),  // A
+  new Point(300, 200, 1.0, false),  // B
+  new Point(300, 300, 1.0, false),  // C
+  new Point(200, 300, 1.0, false),  // D
+  new Point(400, 100, 1.0, true),   // Anchor
+];
+
+// let sticks = [
+//   new Stick(points[0], points[1], distance(points[0], points[1])),  //  A-----B
+//   new Stick(points[1], points[2], distance(points[1], points[2])),  //  | \   |
+//   new Stick(points[2], points[3], distance(points[2], points[3])),  //  |  \  |
+//   new Stick(points[3], points[0], distance(points[3], points[0])),  //  |   \ |
+//   new Stick(points[0], points[2], distance(points[0], points[2])),  //  D-----C
+//   new Stick(points[4], points[2], distance(points[4], points[2]), true)   //         \_(anchor)
+// ];
+
+let boxes = [
+  new Box(points[0], points[1], points[2], points[3], true),
+];
 
 function setup() {
   canvas = createCanvas(SCREEN_WIDTH, SCREEN_HEIGHT+100);
-  // Create multiple boxes
-  boxes.push(new Box(250, SCREEN_HEIGHT-200, 50, 50));
-  boxes.push(new Box(550, SCREEN_HEIGHT-200, 50, 50));
 }
 
 function draw() {  
   let dt = deltaTime / 1000;
   
+  
+  background('black');
+
+  // for (let point of points) {
+  //   point.update(dt);
+  // }
+
+  // // Update all sticks
+  // for (let i = 0; i < 10; i++) {
+  //   for (let stick of sticks) {
+  //     stick.update(dt);
+  //   }
+  // }
+  
+  // // Force points to stay inside the window borders
+  // for (let point of points) {
+  //   point.constrain();
+  // }
+  
+  // // Render all points and sticks
+  // background('black');
+  // for (let stick of sticks) {
+  //   stick.render();
+  // }
+  // for (let point of points) {
+  //   point.render();
+  // }
+
   for (let box of boxes) {
     box.update(dt);
   }
-  
-  background('black');
-  for (let box of boxes) {
-    box.render();
-  }
-}
 
-function mousePressed() {
-  for (let box of boxes) {
-    if (box.handleMousePressed(mouseX, mouseY)) {
-      break;
-    }
-  }
-}
 
-function mouseDragged() {
-  for (let box of boxes) {
-    if (box.handleMouseDragged(mouseX)) {
-      break;
-    }
-  }
-}
-
-function mouseReleased() {
-  for (let box of boxes) {
-    if (box.handleMouseReleased()) {
-      break;
-    }
-  }
 }
