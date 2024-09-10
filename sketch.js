@@ -194,7 +194,7 @@ let sticks = [
 ];
 
 let boxes = [
-  new Box(points[0], points[1], points[2], points[3], false),
+  new Box(points[0], points[1], points[2], points[3], true),
 ];
 
 function setup() {
@@ -207,34 +207,34 @@ function draw() {
   
   background('black');
 
-  // for (let point of points) {
-  //   point.update(dt);
-  // }
-
-  // // Update all sticks
-  // for (let i = 0; i < 10; i++) {
-  //   for (let stick of sticks) {
-  //     stick.update(dt);
-  //   }
-  // }
-  
-  // // Force points to stay inside the window borders
-  // for (let point of points) {
-  //   point.constrain();
-  // }
-  
-  // // Render all points and sticks
-  // background('black');
-  // for (let stick of sticks) {
-  //   stick.render();
-  // }
-  // for (let point of points) {
-  //   point.render();
-  // }
-
-  for (let box of boxes) {
-    box.update(dt);
+  for (let point of points) {
+    point.update(dt);
   }
+
+  // Update all sticks
+  for (let i = 0; i < 10; i++) {
+    for (let stick of sticks) {
+      stick.update(dt);
+    }
+  }
+  
+  // Force points to stay inside the window borders
+  for (let point of points) {
+    point.constrain();
+  }
+  
+  // Render all points and sticks
+  background('black');
+  for (let stick of sticks) {
+    stick.render();
+  }
+  for (let point of points) {
+    point.render();
+  }
+
+  // for (let box of boxes) {
+  //   box.update(dt);
+  // }
 
 
 }
