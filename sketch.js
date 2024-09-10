@@ -237,9 +237,8 @@ let boxes = [];
 function setup() {
   canvas = createCanvas(SCREEN_WIDTH, SCREEN_HEIGHT+100);
   // Create multiple boxes
-  boxes.push(new Box(250, SCREEN_HEIGHT-30, 50, 50));
-  boxes.push(new Box(400, SCREEN_HEIGHT-30, 50, 50));
-  boxes.push(new Box(550, SCREEN_HEIGHT-30, 50, 50));
+  boxes.push(new Box(250, SCREEN_HEIGHT-200, 50, 50));
+  boxes.push(new Box(550, SCREEN_HEIGHT-200, 50, 50));
 }
 
 function draw() {  
