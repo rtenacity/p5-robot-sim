@@ -85,7 +85,7 @@ class Stick {
     let length = this.restLength;
 
     if (this.harmonic) {
-      length = this.restLength + Math.sin(this.frameCount / 200) * 50;
+      length = this.restLength + Math.sin(this.frameCount / 200) * 20;
     }
 
     let dx = this.p1.x - this.p0.x;
@@ -136,7 +136,7 @@ class Box {
   update(dt) {
     if (this.oscillating) {
       // Oscillate width
-      let widthChange = Math.sin(this.stickArray[0].frameCount / 10) * 20;
+      let widthChange = Math.pow(Math.sin(this.stickArray[0].frameCount / 20), 2) * 20;
       this.stickArray[0].restLength = this.initialWidth + widthChange;
       this.stickArray[2].restLength = this.initialWidth + widthChange;
 
@@ -184,17 +184,17 @@ let points = [
   new Point(400, 100, 1.0, true),   // Anchor
 ];
 
-// let sticks = [
-//   new Stick(points[0], points[1], distance(points[0], points[1])),  //  A-----B
-//   new Stick(points[1], points[2], distance(points[1], points[2])),  //  | \   |
-//   new Stick(points[2], points[3], distance(points[2], points[3])),  //  |  \  |
-//   new Stick(points[3], points[0], distance(points[3], points[0])),  //  |   \ |
-//   new Stick(points[0], points[2], distance(points[0], points[2])),  //  D-----C
-//   new Stick(points[4], points[2], distance(points[4], points[2]), true)   //         \_(anchor)
-// ];
+let sticks = [
+  new Stick(points[0], points[1], distance(points[0], points[1])),  //  A-----B
+  new Stick(points[1], points[2], distance(points[1], points[2])),  //  | \   |
+  new Stick(points[2], points[3], distance(points[2], points[3])),  //  |  \  |
+  new Stick(points[3], points[0], distance(points[3], points[0])),  //  |   \ |
+  new Stick(points[0], points[2], distance(points[0], points[2])),  //  D-----C
+  new Stick(points[4], points[2], distance(points[4], points[2]), true)   //         \_(anchor)
+];
 
 let boxes = [
-  new Box(points[0], points[1], points[2], points[3], true),
+  new Box(points[0], points[1], points[2], points[3], false),
 ];
 
 function setup() {
