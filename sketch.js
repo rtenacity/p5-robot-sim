@@ -3,7 +3,7 @@ const SCREEN_HEIGHT = window.innerHeight - 100;
 
 let force_x = 0;
 let force_y = 500; // Gravity (increased for more visible effect)
-let damp_constant = 0.5;
+let damp_constant = 0.2;
 
 function distance(p0, p1) {
   let dx = p1.x - p0.x;
@@ -68,7 +68,7 @@ class Point {
   }
 }
 
-class Stick {
+class Link {
   constructor(p0, p1, restLength, harmonic, diagonal) {
     this.p0 = p0;
     this.p1 = p1;
@@ -81,7 +81,6 @@ class Stick {
   }
 
   update(dt) {
-
     let length = this.restLength;
 
     if (this.harmonic) {
@@ -115,16 +114,15 @@ class Stick {
   }
 }
 
-
 class Box {
   constructor(p1, p2, p3, p4, oscillating) {
     this.ptArray = [p1, p2, p3, p4];
-    this.stickArray = [
-      new Stick(p1, p2, distance(p1, p2), false),
-      new Stick(p2, p3, distance(p2, p3), false),
-      new Stick(p3, p4, distance(p3, p4), false),
-      new Stick(p4, p1, distance(p4, p1), false),
-      new Stick(p1, p3, distance(p1, p3), false, true),
+    this.linkArray = [
+      new Link(p1, p2, distance(p1, p2), false),
+      new Link(p2, p3, distance(p2, p3), false),
+      new Link(p3, p4, distance(p3, p4), false),
+      new Link(p4, p1, distance(p4, p1), false),
+      new Link(p1, p3, distance(p1, p3), false, true),
     ];
 
     this.oscillating = oscillating;
@@ -136,22 +134,22 @@ class Box {
   update(dt) {
     if (this.oscillating) {
       // Oscillate width
-      let widthChange = Math.pow(Math.sin(this.stickArray[0].frameCount / 20), 2) * 20;
-      this.stickArray[0].restLength = this.initialWidth + widthChange;
-      this.stickArray[2].restLength = this.initialWidth + widthChange;
+      let widthChange = Math.pow(Math.sin(this.linkArray[0].frameCount / 20), 2) * 20;
+      this.linkArray[0].restLength = this.initialWidth + widthChange;
+      this.linkArray[2].restLength = this.initialWidth + widthChange;
 
       let heightChange = 0
-      this.stickArray[1].restLength = this.initialHeight + heightChange;
-      this.stickArray[3].restLength = this.initialHeight + heightChange;
+      this.linkArray[1].restLength = this.initialHeight + heightChange;
+      this.linkArray[3].restLength = this.initialHeight + heightChange;
 
       let newWidth = this.initialWidth + widthChange;
       let newHeight = this.initialHeight + heightChange;
       let newDiagonal = Math.sqrt(newWidth * newWidth + newHeight * newHeight);
-      this.stickArray[4].restLength = newDiagonal;
+      this.linkArray[4].restLength = newDiagonal;
     }
 
-    for (let stick of this.stickArray) {
-      stick.update(dt);
+    for (let link of this.linkArray) {
+      link.update(dt);
     }
 
     for (let point of this.ptArray) {
@@ -163,8 +161,8 @@ class Box {
   }
 
   render() {
-    for (let stick of this.stickArray) {
-      stick.render();
+    for (let link of this.linkArray) {
+      link.render();
     }
 
     for (let point of this.ptArray) {
@@ -172,9 +170,6 @@ class Box {
     }
   }
 }
-
-
-
 
 let points = [
   new Point(200, 200, 1.0, false),  // A
@@ -184,13 +179,13 @@ let points = [
   new Point(400, 100, 1.0, true),   // Anchor
 ];
 
-let sticks = [
-  new Stick(points[0], points[1], distance(points[0], points[1])),  //  A-----B
-  new Stick(points[1], points[2], distance(points[1], points[2])),  //  | \   |
-  new Stick(points[2], points[3], distance(points[2], points[3])),  //  |  \  |
-  new Stick(points[3], points[0], distance(points[3], points[0])),  //  |   \ |
-  new Stick(points[0], points[2], distance(points[0], points[2])),  //  D-----C
-  new Stick(points[4], points[2], distance(points[4], points[2]), true)   //         \_(anchor)
+let links = [
+  new Link(points[0], points[1], distance(points[0], points[1])),  //  A-----B
+  new Link(points[1], points[2], distance(points[1], points[2])),  //  | \   |
+  new Link(points[2], points[3], distance(points[2], points[3])),  //  |  \  |
+  new Link(points[3], points[0], distance(points[3], points[0])),  //  |   \ |
+  new Link(points[0], points[2], distance(points[0], points[2])),  //  D-----C
+  new Link(points[4], points[2], distance(points[4], points[2]), true)   //         \_(anchor)
 ];
 
 let boxes = [
@@ -204,37 +199,34 @@ function setup() {
 function draw() {  
   let dt = deltaTime / 1000;
   
-  
   background('black');
 
-  for (let point of points) {
-    point.update(dt);
-  }
-
-  // Update all sticks
-  for (let i = 0; i < 10; i++) {
-    for (let stick of sticks) {
-      stick.update(dt);
-    }
-  }
-  
-  // Force points to stay inside the window borders
-  for (let point of points) {
-    point.constrain();
-  }
-  
-  // Render all points and sticks
-  background('black');
-  for (let stick of sticks) {
-    stick.render();
-  }
-  for (let point of points) {
-    point.render();
-  }
-
-  // for (let box of boxes) {
-  //   box.update(dt);
+  // for (let point of points) {
+  //   point.update(dt);
   // }
 
+  // // Update all links
+  // for (let i = 0; i < 10; i++) {
+  //   for (let link of links) {
+  //     link.update(dt);
+  //   }
+  // }
+  
+  // // Force points to stay inside the window borders
+  // for (let point of points) {
+  //   point.constrain();
+  // }
+  
+  // // Render all points and links
+  // background('black');
+  // for (let link of links) {
+  //   link.render();
+  // }
+  // for (let point of points) {
+  //   point.render();
+  // }
 
+  for (let box of boxes) {
+    box.update(dt);
+  }
 }
